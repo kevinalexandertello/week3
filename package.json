@@ -1,17 +1,17 @@
 {
-  "name": "nodejs-complete-guide",
+  "name": "node-shop",
   "version": "1.0.0",
-  "description": "Complete Node.js Guide",
+  "description": "store node",
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node app.js",
-    "start-server": "node app.js"
+    "start": "nodemon app.js",
+    "start-server": "nodemon app.js"
   },
-  "author": "Maximilian Schwarzmüller",
-  "license": "ISC",
+  "author": "kevin tello",
+  "license": "noding",
   "devDependencies": {
-    
+
   },
   "dependencies": {
     "bindings": "^1.5.0",
