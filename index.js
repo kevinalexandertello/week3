@@ -36,7 +36,7 @@ app.listen(process.env.PORT || 3000);
 
 mongoose
   .connect(
-    'mongodb+srv://kevin40597622:<password>@cluster0.uzizy.mongodb.net/myFirstDatabase?retryWrites=true&w=majority'
+    'mongodb+srv://kevin40597622:<kevin40597622>@cluster0.uzizy.mongodb.net/myFirstDatabase?retryWrites=true&w=majority'
   )
   .then(result => {
     User.findOne().then(user => {
