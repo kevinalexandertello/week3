@@ -1,13 +1,9 @@
 const path  = require('path');
-const flash =  require('connect-flash')
-
 const express = require('express');
 const app = express();
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
-const session = require('express-session');
-const csrf= require('csurf');
-const MongoDBStore = require('connect-mongodb-session')(session);
+
 
 const adminRoutes = require('./routes/admin')
 const shopRoutes = require('./routes/shop')
@@ -17,16 +13,13 @@ const User = require('./models/user')
 const cors = require('cors') // Place this with other requires (like 'path' and 'express')
 
 const MONGODB_URL = process.env.MONGODB_URL || 'mongodb+srv://kevin40597622:kevin40597622@cluster0.uzizy.mongodb.net/e-shop?retryWrites=true&w=majority';
-const MONGODB_URI = process.env.MONGODB_URL || 'mongodb+srv://kevin40597622:kevin40597622@cluster0.uzizy.mongodb.net/e-shop';
+//const MONGODB_URI = process.env.MONGODB_URL || 'mongodb+srv://kevin40597622:kevin40597622@cluster0.uzizy.mongodb.net/e-shop';
 
-const store = new MongoDBStore({
-  uri : MONGODB_URI,
-  collection: 'sessions'
+//const store = new MongoDBStore({
+  //uri : MONGODB_URI,
+  //collection: 'sessions'
 
-})
-
-const csrfProtection  = csrf()
-
+//})
 
 const corsOptions = {
     origin: "https://week3-cse341.herokuapp.com/",
@@ -57,41 +50,19 @@ app.set('views','views');
 
 app.use(bodyParser.urlencoded({extended:false}));
 app.use(express.static(path.join(__dirname,"public")));
-app.use(
-  session({
-  secret: 'my secret', 
-  resave : false ,
-  saveUninitialized: false,
-  store: store,
-}
-));
-
-app.use(csrfProtection) 
-app.use(flash()) 
-
 app.use((req,res,next)=>{
-  if(!req.session.user){
-    return next()
-  }
-  User.findById(req.session.user._id)
+  User.findById('615e45979b5fa054f27bae16')
   .then(user=>{
-    req.user= user;
+    req.user =user;
     next()
-  })
-  .catch(e=> console.log(e))
-})
-
-app.use( (req,res,next)=>{
-  res.locals.isLoggedIn = req.session.isLoggedIn;
-  res.locals.csrfToken =  req.csrfToken()
-  next()
-})
-
-
+  }).catch(e=>console.log(e))
+});
+//app.use(csrfProtection) 
+//app.use(flash()) 
 
 app.use('/admin',adminRoutes.routes);
 app.use(shopRoutes);
-app.use(authRoutes);
+//app.use(authRoutes);
 
 app.use(errorController.get404);
 
@@ -99,6 +70,18 @@ app.use(errorController.get404);
 mongoose
 .connect(MONGODB_URL, options)
 .then(result=>{
+  User.findOne().then(user =>{ if(!user){
+
+    const user = new User({
+      name: 'Kevin',
+      email: 'gaston_alexander@hotmail.es',
+      cart:{
+        items:[ ]
+      }
+    })
+    user.save()
+    
+  }})
   app.listen(port)
 })
 .catch(e=> console.log(e))
