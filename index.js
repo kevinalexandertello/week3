@@ -1,12 +1,26 @@
 const path = require('path');
+const flash =  require('connect-flash')
 const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const errorController = require('./controllers/error');
 const User = require('./models/user');
+const session = require('express-session');
 const cors = require('cors') // Place this with other requires (like 'path' and 'express')
+const csrf= require('csurf');
+const MongoDBStore = require('connect-mongodb-session')(session);
+
 
 const MONGODB_URL = process.env.MONGODB_URL || 'mongodb+srv://kevin40597622:kevin40597622@cluster0.uzizy.mongodb.net/e-shop?retryWrites=true&w=majority';
+const MONGODB_URI = process.env.MONGODB_URL || 'mongodb+srv://kevin40597622:kevin40597622@cluster0.xxfws.mongodb.net/shop';
+
+const store = new MongoDBStore({
+  uri : MONGODB_URI,
+  collection: 'sessions'
+
+})
+
+const csrfProtection  = csrf()
 const app = express();
 
 const corsOptions = {
@@ -38,43 +52,50 @@ app.set('views', 'views');
 
 const adminRoutes = require('./routes/admin');
 const shopRoutes = require('./routes/shop');
+const authRoutes = require('./routes/auth');
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(
+  session({
+  secret: 'a secret', 
+  resave : false ,
+  saveUninitialized: false,
+  store: store,
+}
+));
 
-app.use((req, res, next) => {
-  User.findById('616b42536d1f29728a038c82')
-    .then(user => {
-      req.user = user;
-      next();
-    })
-    .catch(err => console.log(err));
-});
+app.use(csrfProtection) 
+app.use(flash()) 
+
+app.use((req,res,next)=>{
+  if(!req.session.user){
+    return next()
+  }
+  User.findById(req.session.user._id)
+  .then(user=>{
+    req.user= user;
+    next()
+  })
+  .catch(e=> console.log(e))
+})
+
+app.use( (req,res,next)=>{
+  res.locals.isLoggedIn = req.session.isLoggedIn;
+  res.locals.csrfToken =  req.csrfToken()
+  res.locals.userName =  req.session.userName
+  next()
+})
 
 app.use('/admin', adminRoutes);
 app.use(shopRoutes);
+app.use(authRoutes);
 
 app.use(errorController.get404);
 
 mongoose
-  .connect(
-    'mongodb+srv://kevin40597622:kevin40597622@cluster0.uzizy.mongodb.net/e-shop?retryWrites=true&w=majority'
-  )
-  .then(result => {
-    User.findOne().then(user => {
-      if (!user) {
-        const user = new User({
-          name: 'Kevin',
-          email: 'gaston_alexander@hotmail.es',
-          cart: {
-            items: []
-          }
-        });
-        user.save();
-      }
-    });
-    app.listen(port);
-  })
-  .catch(err => {
-    console.log(err);
-  });
+.connect(MONGODB_URL, options)
+.then(result=>{
+  app.listen(port)
+})
+.catch(e=> console.log(e))
