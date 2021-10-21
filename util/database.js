@@ -6,7 +6,7 @@ let _db;
 const mongoConnect= (cb)=> {
 
     
-    MongoClient.connect('mongodb+srv://kevin40597622:kevin40597622@cluster0.uzizy.mongodb.net/myFirstDatabase?retryWrites=true&w=majority')
+    MongoClient.connect('mongodb+srv://kevin40597622:kevin40597622@cluster0.uzizy.mongodb.net/e-shop?retryWrites=true&w=majority')
     .then(client=>{
         console.log('connected');
         _db = client.db();
