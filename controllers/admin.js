@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const { validationResult } = require('express-validator/check');
+const { validationResult } = require('express-validator');
 
 const Product = require('../models/product');
 
@@ -11,7 +11,13 @@ exports.getAddProduct = (req, res, next) => {
     path: '/admin/add-product',
     editing: false,
     errorMessage: null,
-    validationErrors: []
+    oldInput:{ title: '',
+            price:'',
+            description : '',
+            imageUrl: '',
+        },
+    validationErrors: [],
+    isLoggedIn: req.session.isLoggedIn,
   });
 };
 
@@ -79,6 +85,13 @@ exports.getEditProduct = (req, res, next) => {
         product: product,
         hasError: false,
         errorMessage: null,
+        oldInput:{ title: '',
+                price:'',
+                description : '',
+                imageUrl: '',
+            },
+
+        isLoggedIn: req.session.isLoggedIn,
         validationErrors: []
       });
     })
@@ -138,13 +151,14 @@ exports.postEditProduct = (req, res, next) => {
 };
 
 exports.getProducts = (req, res, next) => {
-  Product.find()
+  Product.find({userId: req.user._id})
     .then(products => {
       console.log(products);
       res.render('admin/products', {
         prods: products,
         pageTitle: 'Admin Products',
-        path: '/admin/products'
+        path: '/admin/products',
+        isLoggedIn: req.session.isLoggedIn,
       });
     })
     .catch(err => {
