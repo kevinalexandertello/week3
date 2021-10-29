@@ -91,7 +91,7 @@ app.use( (req,res,next)=>{
   next()
 })
 
-app.use('/admin', adminRoutes);
+app.use('/admin', adminRoutes.routes);
 app.use(shopRoutes);
 app.use(authRoutes);
 
