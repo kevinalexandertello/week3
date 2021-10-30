@@ -3,7 +3,7 @@ const {validationResult} = require('express-validator');
 
 
 exports.getAddProduct = (req,res,next)=>{
-    console.log('Adding something');
+    console.log('Adding Videogame');
     res.render("admin/edit-product",{
         docTitle: "Add Videogame" ,
         path : "/admin/add-product",
@@ -65,7 +65,7 @@ exports.postAddProduct =(req,res,next)=>{
 
 exports.getProducts =(req,res,next)=>{
     Pizza.find({userId: req.user._id})
-    .then(pizzas=>{
+    .then(products=>{
         res.render('admin/products',
         {
             prods: pizzas ,
@@ -83,7 +83,7 @@ exports.getEditProduct = (req,res,next)=>{
     if(!editMode){
         return res.redirect('/')
     }
-    Pizza.findById(productId)
+    Product.findById(productId)
     .then((product)=>{
         if(!product){
             return res.redirect('/');

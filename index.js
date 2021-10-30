@@ -85,7 +85,7 @@ app.use((req, res, next) => {
 });
 
 app.use( (req,res,next)=>{
-  res.locals.isLoggedIn = req.session.isLoggedIn;
+  res.locals.isAuthenticated = req.session.isLoggedIn;
   res.locals.csrfToken =  req.csrfToken()
   res.locals.userName =  req.session.userName
   next()
