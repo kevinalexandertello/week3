@@ -47,7 +47,7 @@ exports.postAddProduct =(req,res,next)=>{
         userId: req.user
     });
     console.log('Videogame added')
-    pizza
+    product
     .save().then(r=>{
         console.log('Videogame created')
         res.redirect('/admin/product');
