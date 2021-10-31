@@ -1,177 +1,169 @@
-const product = require('../models/product');
-const {validationResult} = require('express-validator');
+const mongoose = require('mongoose');
 
+const { validationResult } = require('express-validator');
 
-exports.getAddProduct = (req,res,next)=>{
-    console.log('Adding Videogame');
-    res.render("admin/edit-product",{
-        docTitle: "Add Videogame" ,
-        path : "/admin/add-product",
+const Product = require('../models/product');
+
+exports.getAddProduct = (req, res, next) => {
+  res.render('admin/edit-product', {
+    pageTitle: 'Add Product',
+    path: '/admin/add-product',
+    editing: false,
+    hasError: false,
+    errorMessage: null,
+    validationErrors: []
+  });
+};
+
+exports.postAddProduct = (req, res, next) => {
+  const title = req.body.title;
+  const imageUrl = req.body.imageUrl;
+  const price = req.body.price;
+  const description = req.body.description;
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    console.log(errors.array());
+    return res.status(422).render('admin/edit-product', {
+      pageTitle: 'Add Product',
+      path: '/admin/add-product',
+      editing: false,
+      hasError: true,
+      product: {
+        title: title,
+        imageUrl: imageUrl,
+        price: price,
+        description: description
+      },
+      errorMessage: errors.array()[0].msg,
+      validationErrors: errors.array()
+    });
+  }
+
+  const product = new Product({
+    // _id: new mongoose.Types.ObjectId('5badf72403fd8b5be0366e81'),
+    title: title,
+    price: price,
+    description: description,
+    imageUrl: imageUrl,
+    userId: req.user
+  });
+  product
+    .save()
+    .then(result => {
+      console.log('Created Product');
+      res.redirect('/admin/products');
+    })
+    .catch(err => {
+      const error = new Error(err);
+      error.httpStatusCode = 500;
+      return next(error);
+    });
+};
+
+exports.getEditProduct = (req, res, next) => {
+  const editMode = req.query.edit;
+  if (!editMode) {
+    return res.redirect('/');
+  }
+  const prodId = req.params.productId;
+  Product.findById(prodId)
+    .then(product => {
+      if (!product) {
+        return res.redirect('/');
+      }
+      res.render('admin/edit-product', {
+        pageTitle: 'Edit Product',
+        path: '/admin/edit-product',
+        editing: editMode,
+        product: product,
+        hasError: false,
         errorMessage: null,
-        oldInput:{ title: '',
-            price:'',
-            description : '',
-            imageUrl: '',
-        },
-        editing: false ,  
-        isLoggedIn: req.session.isLoggedIn,
+        validationErrors: []
+      });
+    })
+    .catch(err => {
+      const error = new Error(err);
+      error.httpStatusCode = 500;
+      return next(error);
     });
-}
+};
 
-exports.postAddProduct =(req,res,next)=>{
-    const title = req.body.title;
-    const price = parseInt(req.body.price);
-    const description = req.body.description;
-    const imageUrl = req.body.imageUrl;
+exports.postEditProduct = (req, res, next) => {
+  const prodId = req.body.productId;
+  const updatedTitle = req.body.title;
+  const updatedPrice = req.body.price;
+  const updatedImageUrl = req.body.imageUrl;
+  const updatedDesc = req.body.description;
 
-    const errors = validationResult(req);
+  const errors = validationResult(req);
 
-    if(!errors.isEmpty()){
-        return  res.render("admin/edit-product",{
-            docTitle: "Add Videogame" ,
-            path : "/admin/add-product",
-            errorMessage: errors.array()[0].msg,
-            oldInput:{ title:title,
-                price:price,
-                description : description,
-                imageUrl:imageUrl,
-            },
-            editing: false ,  
-        });
-        }
-    const product = new Product({
-        title:title,
-        price:price,
-        description : description,
-        imageUrl:imageUrl,
-        userId: req.user
+  if (!errors.isEmpty()) {
+    return res.status(422).render('admin/edit-product', {
+      pageTitle: 'Edit Product',
+      path: '/admin/edit-product',
+      editing: true,
+      hasError: true,
+      product: {
+        title: updatedTitle,
+        imageUrl: updatedImageUrl,
+        price: updatedPrice,
+        description: updatedDesc,
+        _id: prodId
+      },
+      errorMessage: errors.array()[0].msg,
+      validationErrors: errors.array()
     });
-    console.log('Videogame added')
-    product
-    .save().then(r=>{
-        console.log('Videogame created')
-        res.redirect('/admin/product');
-        
-    }).catch(e=>{
-        {
-            const error = new Error(e);
-            error.httpStatus = '500'
-            next(error)
-    }
+  }
 
+  Product.findById(prodId)
+    .then(product => {
+      if (product.userId.toString() !== req.user._id.toString()) {
+        return res.redirect('/');
+      }
+      product.title = updatedTitle;
+      product.price = updatedPrice;
+      product.description = updatedDesc;
+      product.imageUrl = updatedImageUrl;
+      return product.save().then(result => {
+        console.log('UPDATED PRODUCT!');
+        res.redirect('/admin/products');
+      });
     })
-}
+    .catch(err => {
+      const error = new Error(err);
+      error.httpStatusCode = 500;
+      return next(error);
+    });
+};
 
-
-exports.getProducts =(req,res,next)=>{
-    Pizza.find({userId: req.user._id})
-    .then(products=>{
-        res.render('admin/products',
-        {
-            prods: pizzas ,
-            docTitle: 'Admin Videogames' ,
-            path:"/admin/products",  
-            isLoggedIn: req.session.isLoggedIn,
-        });
-
-    }).catch(e=> res.redirect('/500'))
-
-}
-exports.getEditProduct = (req,res,next)=>{
-    const productId = req.params.id
-    const editMode = req.query.edit;
-    if(!editMode){
-        return res.redirect('/')
-    }
-    Product.findById(productId)
-    .then((product)=>{
-        if(!product){
-            return res.redirect('/');
-        }
-
-        res.render("admin/edit-product",{
-            docTitle: "Edit  Videogame" ,
-            path : "/admin/edit-product",
-            editing: editMode,
-            product: product,
-            errorMessage: null,
-            oldInput:{ title: '',
-                price:'',
-                description : '',
-                imageUrl: '',
-            },
-
-            isLoggedIn: req.session.isLoggedIn,
-        });
-    }).catch(e=>{
-            const error = new Error(e);
-            error.httpStatus = '500'
-            next(error)
+exports.getProducts = (req, res, next) => {
+  Product.find({ userId: req.user._id })
+    .then(products => {
+      console.log(products);
+      res.render('admin/products', {
+        prods: products,
+        pageTitle: 'Admin Products',
+        path: '/admin/products'
+      });
     })
-}
-exports.postEditProduct = (req,res,next)=>{
-    const productId = req.body.id;
-    const updatedTitle = req.body.title;
-    let updatedPrice = parseInt(req.body.price);
-    const updatedDescription = req.body.description;
-    const updatedImageUrl = req.body.imageUrl;
-    const errors = validationResult(req);
+    .catch(err => {
+      const error = new Error(err);
+      error.httpStatusCode = 500;
+      return next(error);
+    });
+};
 
-    if(!errors.isEmpty()){
-        return  res.render("admin/edit-product",{
-            docTitle: "Add Videogame" ,
-            path : "/admin/edit-product",
-            errorMessage: errors.array()[0].msg,
-            oldInput:{ title:updatedTitle,
-                price:updatedPrice,
-                description : updatedDescription,
-                imageUrl:updatedImageUrl,
-            },
-            editing: false ,  
-        });
-        }
-    
-    
-    Pizza.findById(productId)
-    .then(product =>{
-        if (product.userId.toString() !== req.user._id.toString()){
-            return res.redirect('/');
-        }
-        product.title = updatedTitle;
-        product.price = updatedPrice;
-        product.description = updatedDescription;
-        product.imageUrl = updatedImageUrl
-        return product.save().then(result =>{
-            res.redirect('/admin/product')
-            
-        })
-        
+exports.postDeleteProduct = (req, res, next) => {
+  const prodId = req.body.productId;
+  Product.deleteOne({ _id: prodId, userId: req.user._id })
+    .then(() => {
+      console.log('DESTROYED PRODUCT');
+      res.redirect('/admin/products');
     })
-    .catch(e=>{
-            const error = new Error(e);
-            error.httpStatus = '500'
-            next(error)
-    })
-    
-    
-}
-
-exports.postDeleteProduct =(req,res,next)=>{
-    const productId = req.body.id;
-    console.log(productId);
-    Pizza.deleteOne({_id: productId, userId: req.user._id})
-    .then(()=>{
-        console.log('It was deleted');
-        res.redirect('/admin/products')
-    })
-    .catch((e)=>
-        {
-            const error = new Error(e);
-            error.httpStatus = '500'
-            next(error)
-    }
-        )
-
-    
-
-}
+    .catch(err => {
+      const error = new Error(err);
+      error.httpStatusCode = 500;
+      return next(error);
+    });
+};
